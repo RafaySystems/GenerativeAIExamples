@@ -1,0 +1,60 @@
+name: RAG Docker Image CI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: GitHub Tag Name example
+      run: |
+         echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
+         echo "Tag name from github.ref_name: ${{  github.ref_name }}"
+    - name: Login to NCR 
+      uses: docker/login-action@v2
+      with:
+        registry: nvcr.io
+        username: $oauthtoken
+        password: ${{ secrets.NCVR_REGISTRY_TOKEN }}
+    - name: Login to Rafay Registry
+      uses: docker/login-action@v2
+      with:
+        registry: registry.dev.rafay-edge.net
+        username: ${{ secrets.REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    - name: Build and push triton infrenece
+      uses: docker/login-action@v2
+      with:
+        context: ./RetrievalAugmentedGeneration/llm-inference-server
+        file: ./RetrievalAugmentedGeneration/llm-inference-server/Dockerfile
+        push: true
+        tags: registry.dev.rafay-edge.net/rafay/rag-nvidia-example-llm-inference-server:${{  github.ref_name }}
+    - name: Build and push jupyter server
+      uses: docker/login-action@v2
+      with:
+        context: ./RetrievalAugmentedGeneration
+        file: ./RetrievalAugmentedGeneration/Dockerfile.notebooks
+        push: true
+        tags: registry.dev.rafay-edge.net/rafay/rag-nvidia-example-jupyter-server:${{  github.ref_name }}
+    - name: Build and push chain server
+      uses: docker/login-action@v2
+      with:
+        context: ./RetrievalAugmentedGeneration
+        file: ./RetrievalAugmentedGeneration/Dockerfile
+        push: true
+        tags: registry.dev.rafay-edge.net/rafay/rag-nvidia-example-chain-server:${{  github.ref_name }} 
+    - name:  Build and push frontend server
+      uses: docker/login-action@v2
+      with:
+        context: ./RetrievalAugmentedGeneration/frontend
+        file: ./RetrievalAugmentedGeneration/frontend/Dockerfile
+        push: true
+        tags: registry.dev.rafay-edge.net/rafay/rag-nvidia-example-frontend:${{  github.ref_name }} 
+       
